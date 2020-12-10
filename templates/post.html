@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Добавить комментарий{% endblock %}
+{% block header %}Добавить комментарий{% endblock %}
+{% block content %}
+
+<main role="main" class="container">
+<div class="card mb-3 mt-1 shadow-sm">
+    <div class="card-body">  
+        <div class="row">
+            {% include "include/profile_user.html" %}
+            <div class="col-md-9">
+            {% include "include/post_item.html" with post=post %}
+            {% include "comments.html" with items=comments %}
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+
+{% endblock %}

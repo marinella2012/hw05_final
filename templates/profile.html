@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Профиль пользователя {{ user.username }}{% endblock %}
+{% block header %}Профиль пользователя {{ user.username }}{% endblock %}
+{% block content %}
+<main role="main" class="container">
+    <div class="row">
+        {% include "include/profile_user.html" %}
+            <div class="col-md-9">                
+                {% include "include/post_list.html" %}
+            </div>
+    </div>
+</main> 
+{% endblock %}

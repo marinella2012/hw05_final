@@ -1,6 +1,6 @@
 .git/*
 env/
-venv/
+myvenv/
 .venv
 .venv/
 
@@ -17,6 +17,19 @@ __pycache__/
 
 static/
 posts/static/
-media/
 
 db.sqlite3
+
+sent_emails/
+
+.vscode/
+
+migrations/
+
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover 
+
+media/
