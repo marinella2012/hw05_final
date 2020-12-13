@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post, User
+from posts.models import Follow, Group, Post, User
 
 
 class StaticURLTests(TestCase):
@@ -46,12 +46,17 @@ class StaticURLTests(TestCase):
             slug='test-slug',
         )
         cls.user = User.objects.create(username='Marina')
-        cls.user2 = User.objects.create(username='Petro')
         cls.post = Post.objects.create(
             author=cls.user,
             text='Текст',
             group=Group.objects.get(slug='test-slug')
         )
+        cls.user2 = User.objects.create(username='Petro')
+
+    def test_page_not_found(self):
+        """Проверка возврата кода сервера 404, если страница не найдена"""
+        response = self.guest_client.get('/get-something/')
+        self.assertEqual(response.status_code, 404)
 
     def test_pages_url_exists_at_desired_location(self):
         """Проверка доступности /group/test-slug/
@@ -157,16 +162,7 @@ class StaticURLTests(TestCase):
                     }
                 )
             ),
-            'new_post.html': reverse('new_post'),
-            'comments.html': (
-                reverse(
-                    'add_comment',
-                    kwargs={
-                        'post_id': self.post.id,
-                        'username': self.user.username
-                    }
-                )
-            )
+            'new_post.html': reverse('new_post')
         }
         for template, reverse_name in template_page_names.items():
             with self.subTest(template=template):
@@ -191,22 +187,42 @@ class StaticURLTests(TestCase):
                 response = self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template)
 
-    def test_page_not_found(self):
-        """Проверка возврата кода сервера 404, если страница не найдена"""
-        response = self.guest_client.get('/get-something/')
-        self.assertEqual(response.status_code, 404)
-
-    def test_follow_unfollow_url_exists_at_desired_location_authorized(self):
+    def test_follow_url_exists_at_desired_location_authorized(self):
         """Проверка возможности авторизованного пользователя
-        подписки и отписки от автора"""
-        template = 'profile.html'
-        reverse_name = (
+        подписки на автора"""
+        response = self.authorized_client2.get(
             reverse(
                 'profile_follow',
                 kwargs={
                     'username': self.user.username
                 }
-            ),
+            )
+        )
+        following = Follow.objects.filter(
+            user=self.user2,
+            author=self.user
+        ).exists()
+        self.assertTrue(following)
+        self.assertRedirects(response, reverse(
+            'profile',
+            kwargs={
+                    'username': self.user.username
+                }
+            )
+        )
+
+    def test_unfollow_url_exists_at_desired_location_authorized(self):
+        """Проверка возможности авторизованного пользователя
+        отписки от автора"""
+        self.authorized_client2.get(
+            reverse(
+                'profile_follow',
+                kwargs={
+                    'username': self.user.username
+                }
+            )
+        )
+        response = self.authorized_client2.get(
             reverse(
                 'profile_unfollow',
                 kwargs={
@@ -214,7 +230,30 @@ class StaticURLTests(TestCase):
                 }
             )
         )
-        for _ in reverse_name:
-            with self.subTest(template=template):
-                response = self.authorized_client2.get(_)
-                self.assertEqual(response.status_code, 302)
+        following = Follow.objects.filter(
+            user=self.user2,
+            author=self.user
+        ).exists()
+        self.assertFalse(following)
+        self.assertRedirects(response, reverse(
+            'profile',
+            kwargs={
+                    'username': self.user.username
+                }
+            )
+        )
+
+    def test_add_comment_for_different_users(self):
+        """Проверка доступности страницы /comment/
+        для различных пользователей"""
+        reverse_name = reverse(
+                'add_comment',
+                kwargs={
+                    'post_id': self.post.id,
+                    'username': self.user.username
+                }
+            )
+        response1 = self.authorized_client.get(reverse_name)
+        response2 = self.guest_client.get(reverse_name)
+        self.assertEqual(response1.status_code, 200)
+        self.assertEqual(response2.status_code, 302)

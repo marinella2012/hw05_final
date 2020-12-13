@@ -22,7 +22,7 @@ def server_error(request):
     return render(request, "misc/500.html", status=500)
 
 
-@cache_page(20, key_prefix='index_page')
+@cache_page(20)
 def index(request):
     posts = Post.objects.all()
     paginator = Paginator(posts, 10)
@@ -54,13 +54,12 @@ def group_posts(request, slug):
 
 @login_required()
 def new_post(request):
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, files=request.FILES or None)
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
         post.save()
         return redirect('index')
-    form = PostForm()
     return render(request, 'new_post.html', {'form': form})
 
 
@@ -113,7 +112,7 @@ def add_comment(request, post_id, username):
         return redirect('post', username=username, post_id=post_id)
     return render(
         request,
-        'comments.html',
+        'include/comments.html',
         {'form': form, 'post': post}
     )
 

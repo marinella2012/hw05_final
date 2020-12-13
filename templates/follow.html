@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container">
     <h1>Ваша лента</h1>
-    {% include "menu.html" with index=True %}
+    {% include "include/menu.html" with index=True %}
     {% include "include/post_list.html" with post=post %} 
 </div>
 {% endblock %} 

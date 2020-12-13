@@ -31,7 +31,7 @@ class StaticURLTests(TestCase):
             slug='test-slug2',
         )
         cls.user = User.objects.create(username='Marina')
-        small_pic = (
+        cls.small_pic = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
@@ -41,7 +41,7 @@ class StaticURLTests(TestCase):
         )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
-            content=small_pic,
+            content=cls.small_pic,
             content_type='image/gif'
         )
         for _ in range(15):
@@ -185,20 +185,6 @@ class StaticURLTests(TestCase):
         self.assertEqual(response_post.id, self.post.id)
         self.assertEqual(response_post.author.username, self.user.username)
 
-    def test_no_image(self):
-        """Защита от загрузки не графических файлов"""
-        form_data = {
-            'group': self.group.id,
-            'text': self.post.text,
-            'image': self.uploaded,
-        }
-        response = self.authorized_client.post(
-            reverse('new_post'),
-            data=form_data,
-            follow=True
-        )
-        self.assertFalse(response.context.get('page')[0].image)
-
     def test_follow_page_access_for_follower(self):
         """Проверка доступности страницы /follow/ подписчику"""
         self.authorized_client2.get(
@@ -213,7 +199,7 @@ class StaticURLTests(TestCase):
         self.assertEqual(follow_post.group, self.group)
 
     def test_follow_page_access_for_anonimous(self):
-        """Проверка доступности страницы /follow/ анон.пользователю"""
+        """Проверка доступности страницы /follow/ анон. пользователю"""
         response = self.guest_client.get(reverse('follow_index'))
         self.assertEqual(response.status_code, 302)
 
@@ -232,3 +218,32 @@ class StaticURLTests(TestCase):
         response = self.authorized_client.get(reverse('index'))
         img_count2 = response.content.decode().count('<img')
         self.assertGreater(img_count2, img_count)
+
+    def test_no_image(self):
+        """Защита от загрузки не графических файлов"""
+        doc_txt = b'\xd0\x9f\xd1\x80\xd0\xb8\xd0\xb2\xd0\xb5\xd1\x82'
+        uploaded = SimpleUploadedFile(
+            name='small.txt',
+            content=doc_txt,
+            content_type='txt/txt'
+        )
+        form = {
+            'author': self.user,
+            'text': self.post.text,
+            'image': uploaded,
+        }
+        response = self.authorized_client.post(
+            reverse('new_post'),
+            data=form,
+            follow=True
+        )
+        form = response.context.get('form')
+        self.assertFormError(
+            response,
+            'form',
+            'image',
+            'Загрузите правильное изображение. '
+            'Файл, который вы загрузили, '
+            'поврежден или не является изображением.'
+        )
+        self.assertEqual(response.status_code, 200)
