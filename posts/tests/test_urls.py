@@ -243,9 +243,9 @@ class StaticURLTests(TestCase):
             )
         )
 
-    def test_add_comment_for_different_users(self):
+    def test_add_comment_for_authorized(self):
         """Проверка доступности страницы /comment/
-        для различных пользователей"""
+        для авторизованного пользователя"""
         reverse_name = reverse(
                 'add_comment',
                 kwargs={
@@ -253,7 +253,18 @@ class StaticURLTests(TestCase):
                     'username': self.user.username
                 }
             )
-        response1 = self.authorized_client.get(reverse_name)
-        response2 = self.guest_client.get(reverse_name)
-        self.assertEqual(response1.status_code, 200)
-        self.assertEqual(response2.status_code, 302)
+        response = self.authorized_client.get(reverse_name)
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_comment_for_anonimous(self):
+        """Проверка доступности страницы /comment/
+        для неавторизованного пользователя"""
+        reverse_name = reverse(
+                'add_comment',
+                kwargs={
+                    'post_id': self.post.id,
+                    'username': self.user.username
+                }
+            )
+        response = self.guest_client.get(reverse_name)
+        self.assertEqual(response.status_code, 302)
