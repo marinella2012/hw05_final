@@ -1,1 +1,2 @@
-# hw05_final
+# yatube
+Social network prototype
