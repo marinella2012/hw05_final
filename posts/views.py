@@ -20,7 +20,7 @@ def server_error(request):
     return render(request, "misc/500.html", status=500)
 
 
-@cache_page(20)
+@cache_page(10)
 def index(request):
     posts = Post.objects.all()
     paginator = Paginator(posts, 10)
