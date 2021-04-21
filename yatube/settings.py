@@ -8,6 +8,7 @@ SECRET_KEY = '0ggvt0sss#vik^o!jn_a1osx*h6k+w(liq(5o@p5oi(zh9rdm5'
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    '*',
     'localhost',
     '127.0.0.1',
     '[::1]',
